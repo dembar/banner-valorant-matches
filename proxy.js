@@ -161,22 +161,42 @@ function parseVLR(html) {
   }
 
   // 5. MAPA ACTIVO Y SCORE DE RONDAS
-  let currentMap = 'LIVE', roundScoreA = 0, roundScoreB = 0, currentMapNum = 1;
-  const activeIdx = html.indexOf('vm-stats-game mod-active');
-  if (activeIdx !== -1) {
-    const gameBlock = html.slice(activeIdx, activeIdx + 4000);
+let currentMap = 'LIVE', roundScoreA = 0, roundScoreB = 0, currentMapNum = 1;
+const activeIdx = html.indexOf('vm-stats-game mod-active');
+if (activeIdx !== -1) {
+  // Acotar el bloque al siguiente vm-stats-game para no mezclar datos de otros mapas
+  const nextGameIdx = html.indexOf('vm-stats-game', activeIdx + 100);
+  const blockEnd = nextGameIdx !== -1 ? nextGameIdx : activeIdx + 4000;
+  const gameBlock = html.slice(activeIdx, blockEnd);
 
-    const scoreRe = /class="score\s*"\s+style="[^"]*">\s*(\d+)\s*<\/div>/g;
-    const roundScores = [];
-    let rs;
-    while ((rs = scoreRe.exec(gameBlock)) !== null && roundScores.length < 2) roundScores.push(parseInt(rs[1]));
-    if (roundScores.length < 2) {
-      const re2 = /class="score[^"]*"[^>]*>\s*(\d+)\s*<\/div>/g;
-      let r2;
-      while ((r2 = re2.exec(gameBlock)) !== null && roundScores.length < 2) roundScores.push(parseInt(r2[1]));
+  // Buscar SOLO scores con style inline (los del header del mapa activo)
+  const scoreRe = /class="score\s*"\s+style="[^"]*">\s*(\d+)\s*<\/div>/g;
+  const roundScores = [];
+  let rs;
+  while ((rs = scoreRe.exec(gameBlock)) !== null && roundScores.length < 2) {
+    roundScores.push(parseInt(rs[1]));
+  }
+
+  // Fallback: si no encontró con style, buscar class="score" pero
+  // SOLO dentro del primer div.score-container del bloque activo
+  if (roundScores.length < 2) {
+    const scoreContainerStart = gameBlock.indexOf('score-container');
+    const scoreContainerEnd   = scoreContainerStart !== -1
+      ? gameBlock.indexOf('</div>', scoreContainerStart + 200)
+      : -1;
+    const scoreZone = scoreContainerStart !== -1
+      ? gameBlock.slice(scoreContainerStart, scoreContainerEnd + 6)
+      : gameBlock.slice(0, 800); // solo primeros 800 chars como último recurso
+
+    const re2 = /class="score[^"]*"[^>]*>\s*(\d+)\s*<\/div>/g;
+    let r2;
+    while ((r2 = re2.exec(scoreZone)) !== null && roundScores.length < 2) {
+      roundScores.push(parseInt(r2[1]));
     }
-    if (roundScores[0] != null) roundScoreA = roundScores[0];
-    if (roundScores[1] != null) roundScoreB = roundScores[1];
+  }
+
+  if (roundScores[0] != null) roundScoreA = roundScores[0];
+  if (roundScores[1] != null) roundScoreB = roundScores[1];
 
     const mapBlock = extractBetween(gameBlock, 'class="map"', '</div>');
     if (mapBlock) {
@@ -207,6 +227,8 @@ async function pollScore() {
   try {
     console.log(`[proxy] Scraping VLR.gg...`);
     const html = await fetchHTML(MATCH_URL);
+    const fs = require('fs');
+    fs.writeFileSync('vlr-debug.html', html, 'utf8');
     const parsed = parseVLR(html);
     cachedScore = parsed;
     console.log(
