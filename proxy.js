@@ -124,7 +124,7 @@ function parseVLR(html) {
 
   // 3. NOMBRES Y LOGOS
   let nameA = 'TBD', nameB = 'TBD', logoA = '', logoB = '';
-  const nameRe = /class="wf-title-med\s*">\s*([^<]{2,40}?)\s*<\/div>/g;
+  const nameRe = /class="wf-title-med(?:\s+[^\"]*)?"\s*>\s*([^<]{2,60}?)\s*<\/div>/g;
   const names = [];
   let nm;
   while ((nm = nameRe.exec(html)) !== null && names.length < 2) {
@@ -223,6 +223,8 @@ if (activeIdx !== -1) {
   };
 }
 
+module.exports = { parseVLR };
+
 async function pollScore() {
   try {
     console.log(`[proxy] Scraping VLR.gg...`);
@@ -295,16 +297,18 @@ const server = http.createServer((req, res) => {
   res.end(JSON.stringify({ error: 'Use /score' }));
 });
 
-server.listen(PORT, '127.0.0.1', async () => {
-  const input = await askURL();
-  const { matchURL, firstGameId } = parseInputURL(input);
-  MATCH_URL     = matchURL;
-  FIRST_GAME_ID = firstGameId;
-  console.log('');
-  console.log(`[proxy] Partido : ${MATCH_URL}`);
-  console.log(`[proxy] Mapa 1  : game=${FIRST_GAME_ID || 'no detectado en URL'}`);
-  console.log('');
-  pollScore();
-  setInterval(pollScore, POLL_INTERVAL_MS);
-  console.log(`[proxy] Actualizando cada ${POLL_INTERVAL_MS / 1000}s. Ctrl+C para detener.\n`);
-});
+if (require.main === module) {
+  server.listen(PORT, '127.0.0.1', async () => {
+    const input = await askURL();
+    const { matchURL, firstGameId } = parseInputURL(input);
+    MATCH_URL     = matchURL;
+    FIRST_GAME_ID = firstGameId;
+    console.log('');
+    console.log(`[proxy] Partido : ${MATCH_URL}`);
+    console.log(`[proxy] Mapa 1  : game=${FIRST_GAME_ID || 'no detectado en URL'}`);
+    console.log('');
+    pollScore();
+    setInterval(pollScore, POLL_INTERVAL_MS);
+    console.log(`[proxy] Actualizando cada ${POLL_INTERVAL_MS / 1000}s. Ctrl+C para detener.\n`);
+  });
+}
