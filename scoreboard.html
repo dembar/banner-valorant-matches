@@ -266,10 +266,10 @@ function applyLogo(imgEl, url) {
 }
 
 function render(data) {
-  el.nameA.textContent  = data.teamA.short || data.teamA.name?.slice(0,3).toUpperCase() || '???';
+  el.nameA.textContent = data.teamA.name || '???';
   el.scoreA.textContent = String(data.teamA.score ?? 0);
   el.scoreB.textContent = String(data.teamB.score ?? 0);
-  el.nameB.textContent  = data.teamB.short || data.teamB.name?.slice(0,3).toUpperCase() || '???';
+  el.nameB.textContent = data.teamB.name || '???';
   el.mapName.textContent = data.map || 'LIVE';
   if (el.mapLabel) el.mapLabel.textContent = 'MAP ' + (data.mapNumber || 1);
 
