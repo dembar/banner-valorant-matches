@@ -156,3 +156,17 @@ The proxy and overlay are intentionally separated: the proxy handles all externa
 ## 📄 License
 
 MIT — free to use, modify, and distribute. Not affiliated with Riot Games or VLR.gg.
+
+---
+
+## 🌈 Branches
+
+- `main`: Default overlay with the dark/black theme (Black Team).
+- `whiteTema`: Alternative branch providing a light/white theme for users who prefer a white team/banner.
+
+To try the white theme locally, switch to the branch and reload your OBS browser source:
+
+```bash
+git fetch origin
+git checkout whiteTema
+```
